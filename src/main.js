@@ -18,8 +18,10 @@ import router from './router/index.js';
 
 // pinia
 import { createPinia } from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 
 const pinia = createPinia();
+pinia.use(piniaPluginPersistedstate);
 
 const vuetify = createVuetify({
   components,

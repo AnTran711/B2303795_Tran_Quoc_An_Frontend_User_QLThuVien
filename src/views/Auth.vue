@@ -4,7 +4,7 @@
 <template>
   <v-app>
     <div class="app">
-      <router-view />
+      <router-view class="zoom-in" />
     </div>
   </v-app>
 </template>
@@ -19,5 +19,21 @@
     background-image: url('/public/imgs/tu_sach.png');
     background-size: cover;
     background-position: center;
+  }
+
+  /* CSS zoom form đăng ký và đăng nhập */
+  .zoom-in {
+    animation: zoomIn 0.5s ease forwards;
+  }
+
+  @keyframes zoomIn {
+    from {
+      scale: 0.5;
+      opacity: 0;
+    }
+    to {
+      scale: 1;
+      opacity: 1;
+    }
   }
 </style>

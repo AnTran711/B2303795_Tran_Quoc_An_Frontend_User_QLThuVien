@@ -1,5 +1,50 @@
 <script setup>
-  import { nextTick, ref } from 'vue';
+  import { nextTick, onMounted, reactive, ref } from 'vue';
+  import { toast } from 'vue3-toastify';
+  import { useRoute } from 'vue-router';
+  import { rules } from '@/utils/rules.js';
+  import { useReaderStore } from '@/stores/useReaderStore';
+  import { useRouter } from 'vue-router';
+
+  // Store
+  const readerStore = useReaderStore();
+
+  // Router
+  const router = useRouter();
+
+  // Xử lí hiện toast khi đăng ký thành công
+  const route = useRoute();
+  onMounted(() => {
+    if (route.query.registeredPhone) {
+      toast.success('Đăng ký tài khoản thành công');
+    }
+  });
+
+  // Xử lý gửi thông tin
+
+  //Instance của form
+  const formRef = ref(null);
+
+  // Object chứa dữ liệu người dùng nhập
+  const readerLogin = reactive({
+    DIENTHOAI: null,
+    MATKHAU: null
+  });
+
+  // Hàm xử lý gửi form
+  const login = async () => {
+    // Kiểm tra dữ liệu có hợp lệ hay không
+    const { valid } = await formRef.value.validate();
+
+    if (!valid) {
+      toast.error('Vui lòng kiểm tra lại thông tin nhập');
+      return;
+    }
+
+    await readerStore.login(readerLogin);
+
+    router.push('/');
+  }
 
   // Xử lý ẩn/hiện mật khẩu
   const showPwd = ref(false);
@@ -45,16 +90,7 @@
         </v-col>
     
         <!-- Phần form đăng nhập -->
-        <v-col cols="6" class="d-flex flex-column align-start form-panel">
-          <v-btn
-            to="/"
-            class="ml-12"
-            color="primary"
-            variant="elevated"
-          >
-            <v-icon class="mr-2">mdi-home</v-icon>
-            Về trang chủ
-          </v-btn>
+        <v-col cols="6" class="form-panel">
           <v-card
             class="pa-8 rounded-0"
             max-width="400"
@@ -66,16 +102,19 @@
             </v-card-title>
             <v-card-text class="pt-4">
               <!-- form đăng nhập -->
-              <v-form>
+              <v-form ref="formRef">
                 <!-- Dùng số điện thoại để đăng nhập thay cho username -->
-                <v-text-field 
+                <v-text-field
+                  v-model="readerLogin.DIENTHOAI"
                   label="Số điện thoại"
                   variant="outlined"
                   prepend-inner-icon="mdi-phone"
                   density="comfortable"
                   clearable
+                  :rules="[rules.required]"
                 />
-                <v-text-field 
+                <v-text-field
+                  v-model="readerLogin.MATKHAU"
                   ref="pwdField"
                   class="mt-2"
                   label="Mật khẩu"
@@ -86,6 +125,7 @@
                   :type="showPwd ? 'text' : 'password'"
                   @click:append-inner="togglePwd"
                   clearable
+                  :rules="[rules.required]"
                 />
               </v-form>
             </v-card-text>
@@ -96,8 +136,20 @@
                 class="w-100"
                 color="primary"
                 variant="elevated"
+                @click="login"
               >
                 Đăng nhập
+              </v-btn>
+              <!-- Nút về trang chủ -->
+              <v-btn
+                to="/"
+                height="50"
+                class="w-100"
+                color="primary"
+                variant="elevated"
+              >
+                <v-icon class="mr-2">mdi-home</v-icon>
+                Về trang chủ
               </v-btn>
               <!-- Phần này để chuyển qua trang đăng ký -->
               <div>
@@ -134,7 +186,7 @@
   }
 
   .image-panel {
-    background-color: #2a73c5;
+    background-color: rgba(var(--v-theme-primary), 0.9);
   }
 
   .form-panel {

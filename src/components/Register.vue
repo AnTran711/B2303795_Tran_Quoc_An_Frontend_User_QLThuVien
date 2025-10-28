@@ -1,5 +1,56 @@
 <script setup>
-  import { nextTick, ref, watch } from 'vue';
+  import { nextTick, reactive, ref, watch } from 'vue';
+  import { rules } from '@/utils/rules.js';
+  import { useReaderStore } from '@/stores/useReaderStore.js';
+  import { toast } from 'vue3-toastify';
+  import { useRouter } from 'vue-router';
+
+  const readerStore = useReaderStore();
+  const router = useRouter();
+
+  // Phần của thẻ input ngày sinh
+  const menu = ref(false);
+  const birthDateRaw = ref(null);
+  const birthDateFormatted = ref('');
+
+  watch(birthDateRaw, (newBirthDate) => {
+    if (newBirthDate) {
+      const date = new Date(newBirthDate);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear());
+      birthDateFormatted.value = `${day}/${month}/${year}`;
+    }
+  });
+
+  // Instance của form
+  const formRef = ref(null);
+
+  // Xử lý gửi form đăng ký
+  const reader = reactive({
+    HOLOT: null,
+    TEN: null,
+    NGAYSINH: birthDateFormatted,
+    PHAI: null,
+    DIACHI: null,
+    DIENTHOAI: null,
+    MATKHAU: null
+  });
+
+  // Hàm xử lý gửi dữ liệu
+  const register = async () => {
+    // Kiểm tra dữ liệu có hợp lệ hay không
+    const { valid } = await formRef.value.validate();
+
+    if(!valid) {
+      toast.error('Vui lòng kiểm tra lại thông tin nhập');
+      return;
+    }
+
+    await readerStore.register(reader);
+
+    router.push(`/auth/login?registeredPhone=${reader.DIENTHOAI}`);
+  }
 
   // Xử lý ẩn/hiện mật khẩu
 
@@ -42,24 +93,6 @@
       newInput.setSelectionRange(newPos, newPos);
     })
   }
-
-  // Phần của thẻ input ngày sinh
-  const menu = ref(false);
-  const birthDateRaw = ref(null);
-  const birthDateFormatted = ref('');
-
-  watch(birthDateRaw, (newBirthDate) => {
-    if (newBirthDate) {
-      const date = new Date(newBirthDate);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = String(date.getFullYear());
-      birthDateFormatted.value = `${day}/${month}/${year}`;
-    }
-  });
-
-  // Phần của input giới tính
-  const gender = ref(null);
 </script>
 
 <template>
@@ -82,25 +115,29 @@
       <h1>Đăng ký</h1>
     </v-card-title>
     <v-card-text class="pb-0">
-      <v-form>
+      <v-form ref="formRef">
         <v-container>
           <v-row  class="register-container">
             <v-col cols="6">
               <!-- v-sheet để bọc họ lót và tên nằm trên 1 hàng -->
               <v-sheet class="d-flex ga-4">
-                <v-text-field 
+                <v-text-field
+                  v-model="reader.HOLOT"
                   label="Họ lót"
                   variant="outlined"
                   prepend-inner-icon="mdi-account"
                   density="comfortable"
                   clearable
+                  :rules="[rules.required]"
                 />
-                <v-text-field 
+                <v-text-field
+                  v-model="reader.TEN"
                   label="Tên"
                   variant="outlined"
                   prepend-inner-icon="mdi-account"
                   density="comfortable"
                   clearable
+                  :rules="[rules.required]"
                 />
               </v-sheet class="d-flex ga-4">
 
@@ -122,6 +159,7 @@
                     variant="outlined"
                     density="comfortable"
                     label="Ngày sinh"
+                    :rules="[rules.required]"
                   />
                 </template>
                 <!-- phần date picker để chọn ngày -->
@@ -133,34 +171,39 @@
               </v-menu>
 
               <!-- Giới tính -->
-              <v-radio-group v-model="gender" inline>
+              <v-radio-group v-model="reader.PHAI" inline :rules="[rules.required]">
                 <v-radio class="ml-16 mr-auto" label="Nam" :value="true" color="primary" />
                 <v-radio class="mr-16" label="Nữ" :value="false" color="primary" />
               </v-radio-group>
 
               <!-- Địa chỉ -->
               <v-text-field
+                v-model="reader.DIACHI"
                 class="mt-2"
                 label="Địa chỉ"
                 variant="outlined"
                 prepend-inner-icon="mdi-map-marker"
                 density="comfortable"
                 clearable
+                :rules="[rules.required]"
               />
             </v-col>
 
             <v-col cols="6">
               <!-- Dùng số điện thoại để đăng nhập thay cho username -->
               <v-text-field
+                v-model="reader.DIENTHOAI"
                 label="Số điện thoại"
                 variant="outlined"
                 prepend-inner-icon="mdi-phone"
                 density="comfortable"
                 clearable
+                :rules="[rules.required, ]"
               />
 
               <!-- Mật khẩu cho user -->
               <v-text-field
+                v-model="reader.MATKHAU"
                 ref="pwdField"
                 class="mt-2"
                 label="Mật khẩu"
@@ -171,6 +214,7 @@
                 :type="showPwd ? 'text' : 'password'"
                 @click:append-inner="togglePwd('password')"
                 clearable
+                :rules="[rules.required]"
               />
 
               <!-- Xác nhận mật khẩu -->
@@ -185,6 +229,7 @@
                 :type="showConfirmPwd ? 'text' : 'password'"
                 @click:append-inner="togglePwd('confirm-password')"
                 clearable
+                :rules="[rules.required, rules.confirm(reader.MATKHAU)]"
               />
             </v-col>
           </v-row>
@@ -199,6 +244,7 @@
         width="150"
         color="primary"
         variant="elevated"
+        @click="register"
       >
         Đăng ký
       </v-btn>
