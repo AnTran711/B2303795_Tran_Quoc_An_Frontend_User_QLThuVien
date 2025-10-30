@@ -102,7 +102,7 @@
             </v-card-title>
             <v-card-text class="pt-4">
               <!-- form đăng nhập -->
-              <v-form ref="formRef">
+              <v-form ref="formRef" @keyup.enter="login">
                 <!-- Dùng số điện thoại để đăng nhập thay cho username -->
                 <v-text-field
                   v-model="readerLogin.DIENTHOAI"

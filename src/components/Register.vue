@@ -115,7 +115,7 @@
       <h1>Đăng ký</h1>
     </v-card-title>
     <v-card-text class="pb-0">
-      <v-form ref="formRef">
+      <v-form ref="formRef" @keyup.enter="register">
         <v-container>
           <v-row  class="register-container">
             <v-col cols="6">
