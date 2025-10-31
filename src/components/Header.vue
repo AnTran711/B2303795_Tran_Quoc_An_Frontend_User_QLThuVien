@@ -50,6 +50,7 @@
               class="nav-item"
               variant="text"
               rounded="lg"
+              exact
             >
               <v-icon :icon="item.icon" size="small" class="mr-2"></v-icon>
               {{  item.title }}

@@ -1,6 +1,9 @@
 <script setup>
   import Carousel from '@/components/Carousel.vue';
   import { useBookStore } from '@/stores/useBookStore';
+  import { useRouter } from 'vue-router';
+
+  const router = useRouter();
 
   const bookStore = useBookStore();
 
@@ -16,6 +19,11 @@
     { name: 'Hóa học', icon: 'mdi-flask', color: '#fd79a8' },
     { name: 'Toán học', icon: 'mdi-calculator', color: '#a29bfe' },
   ];
+
+  // Hàm chuyển qua trang xem chi tiết sách
+  const showBook = (bookId) => {
+    router.push(`/book/${bookId}`);
+  }
 </script>
 
 <template>
@@ -78,8 +86,38 @@
           </v-col>
         </v-row>
 
+        <!-- Skeleton sách -->
+        <v-row v-if="bookStore.loading" no-gutters>
+          <v-col cols="12">
+            <!-- Section title -->
+            <v-row class="mb-4" no-gutters>
+              <v-col cols="12">
+                <h2 class="section-title">
+                  <v-icon size="28" class="mr-2">mdi-star</v-icon>
+                  Sách Nổi Bật
+                </h2>
+              </v-col>
+            </v-row>
+
+            <!-- Card sách -->
+            <v-row>
+              <v-col
+                v-for="n in 12"
+                :key="n"
+                cols="6"
+                sm="4"
+                md="3"
+              >
+                <v-skeleton-loader
+                  type="image, article"
+                />
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
+
         <!-- Section sách -->
-        <v-row no-gutters>
+        <v-row v-else no-gutters>
           <v-col cols="12">
             <!-- Section title -->
             <v-row class="mb-4" no-gutters>
@@ -103,6 +141,7 @@
                 <v-card
                   rounded="xl"
                   class="book-card d-flex flex-column justify-space-between"
+                  @click="showBook(book.MASACH)"
                 >
                   <!-- Ảnh bìa -->
                   <v-img
@@ -126,7 +165,8 @@
                   <v-card-text>
                     <h3 class="book-title">{{ book.TENSACH }}</h3>
                     <p class="book-author">{{ book.TENTACGIA }}</p>
-                    <v-chip class="mt-4"
+                    <v-chip
+                      class="mt-4"
                       :color="book.SACHCONLAI > 0 ? 'success' : 'error'"
                     >
                       Còn {{ book.SACHCONLAI }} quyển
@@ -142,6 +182,7 @@
                       class="show-book-btn"
                       variant="elevated"
                       color="primary"
+                      @click="showBook(book.MASACH)"
                     >
                       Xem sách
                     </v-btn>

@@ -7,6 +7,8 @@ import Login from "@/components/Login.vue";
 import Register from "@/components/Register.vue";
 import NotFound from "@/views/NotFound.vue";
 import Home from "@/views/Home.vue";
+import DetailBook from "@/views/DetailBook.vue";
+import BookNotFound from "@/views/BookNotFound.vue";
 
 const routes = [
   {
@@ -17,6 +19,10 @@ const routes = [
       {
         path: '/',
         component: Home
+      },
+      {
+        path: '/book/:bookId',
+        component: DetailBook
       },
       // {
       //   path: '/history',
@@ -42,12 +48,25 @@ const routes = [
       }
     ]
   },
+  {
+    path: '/book-not-found',
+    component: BookNotFound
+  },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound }
 ];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // Khi có savedPosition (ví dụ: bấm nút Back/Forward), Vue sẽ cuộn lại đúng vị trí cũ
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      // Mặc định cuộn lên đầu trang
+      return { top: 0 }
+    }
+  }
 });
 
 // Guard toàn cục
