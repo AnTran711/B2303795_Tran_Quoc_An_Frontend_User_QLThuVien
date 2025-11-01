@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { toast } from 'vue3-toastify';
 import { useBookStore } from '@/stores/useBookStore';
-import { usePublisherStore } from '@/stores/usePublisherStore';
+import { useGenreStore } from '@/stores/useGenreStore';
 import { useReaderStore } from '@/stores/useReaderStore';
 
 const api = axios.create({
@@ -16,20 +16,20 @@ api.interceptors.request.use(
   (config) => {
     // set trạng thái loading
     const bookStore = useBookStore();
-    const publisherStore = usePublisherStore();
+    const genreStore = useGenreStore();
 
     bookStore.loading = true;
-    publisherStore.loading = true;
+    genreStore.loading = true;
 
     return config;
   },
   (error) => {
     // Do something with request error
     const bookStore = useBookStore();
-    const publisherStore = usePublisherStore();
+    const genreStore = useGenreStore();
 
     bookStore.loading = false;
-    publisherStore.loading = false;
+    genreStore.loading = false;
 
     return Promise.reject(error);
   }
@@ -48,20 +48,20 @@ const refreshTokenAPI = async () => {
 api.interceptors.response.use(
   (response) => {
     const bookStore = useBookStore();
-    const publisherStore = usePublisherStore();
+    const genreStore = useGenreStore();
 
     bookStore.loading = false;
-    publisherStore.loading = false;
+    genreStore.loading = false;
 
     return response;
   },
   (error) => {
     const bookStore = useBookStore();
-    const publisherStore = usePublisherStore();
+    const genreStore = useGenreStore();
     const readerStore = useReaderStore();
 
     bookStore.loading = false;
-    publisherStore.loading = false;
+    genreStore.loading = false;
     
     // Lấy ra các request lỗi đang chờ refresh
     const originalRequest = error.config;

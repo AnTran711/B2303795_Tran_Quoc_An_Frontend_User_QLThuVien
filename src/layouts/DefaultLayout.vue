@@ -3,13 +3,17 @@
   import Header from '@/components/Header.vue';
   import Footer from '@/components/Footer.vue';
   import { useBookStore } from '@/stores/useBookStore';
+  import { useGenreStore } from '@/stores/useGenreStore';
 
   const bookStore = useBookStore();
+  const genreStore = useGenreStore();
 
   // Fetch sách về khi layout được mounted
   onMounted(async () => {
     await bookStore.fetchBooks();
+    await genreStore.fetchGenres();
   })
+  
 </script>
 
 <template>

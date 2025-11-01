@@ -2,10 +2,14 @@
   import { useRoute, useRouter } from 'vue-router';
   import { useBookStore } from '@/stores/useBookStore';
   import { onMounted, ref } from 'vue';
+  import { useReaderStore } from '@/stores/useReaderStore';
+  import api from '@/utils/axios';
+  import { toast } from 'vue3-toastify';
 
   const route = useRoute();
   const router = useRouter();
   const bookStore = useBookStore();
+  const readerStore = useReaderStore();
 
   onMounted(async () => {
     try {
@@ -22,8 +26,15 @@
     showBorrowConfirm.value = true;
   }
 
-  const borrowBook = () => {
+  const borrowBook = async () => {
     // Logic mượn sách
+    if (readerStore.reader && bookStore.currentBook) {
+      const res = await api.post('/book-borrowing', {
+        MADOCGIA: readerStore.reader?.MADOCGIA,
+        MASACH: bookStore.currentBook?.MASACH
+      });
+      toast.success(res.data.message);
+    }
 
     showBorrowConfirm.value = false;
   };

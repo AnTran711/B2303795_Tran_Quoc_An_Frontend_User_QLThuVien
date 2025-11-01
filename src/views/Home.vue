@@ -1,24 +1,62 @@
 <script setup>
   import Carousel from '@/components/Carousel.vue';
+  import Pagination from '@/components/Pagination.vue';
   import { useBookStore } from '@/stores/useBookStore';
+  import { useGenreStore } from '@/stores/useGenreStore';
+  import { computed, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
 
   const router = useRouter();
 
   const bookStore = useBookStore();
+  const genreStore = useGenreStore();
 
-  const genres = [
-    { name: 'Văn học', icon: 'mdi-book-open-variant', color: '#667eea' },
-    { name: 'Trinh thám', icon: 'mdi-magnify', color: '#f093fb' },
-    { name: 'Tình cảm', icon: 'mdi-heart', color: '#f5576c' },
-    { name: 'Kinh dị', icon: 'mdi-ghost', color: '#764ba2' },
-    { name: 'Hài hước', icon: 'mdi-emoticon-happy', color: '#feca57' },
-    { name: 'Học đường', icon: 'mdi-school', color: '#48dbfb' },
-    { name: 'Sinh học', icon: 'mdi-leaf', color: '#26de81' },
-    { name: 'Vật lý', icon: 'mdi-atom', color: '#4b6584' },
-    { name: 'Hóa học', icon: 'mdi-flask', color: '#fd79a8' },
-    { name: 'Toán học', icon: 'mdi-calculator', color: '#a29bfe' },
-  ];
+  // Hàm xóa dấu
+  function removeVietnameseTones(str) {
+    return str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D");
+  }
+
+  // Tìm kiếm + lọc
+  const searchQuery = ref('');
+  const selectedGenre = ref(null);
+
+  // paging
+  const bookInPage = 4;
+  let currentPage = ref(1);
+
+  const filterBooks = computed(() => {
+    let books = bookStore.books;
+
+    // Lọc theo thể loại
+    if (selectedGenre.value) {
+      books = books.filter(b => Array.isArray(b?.THELOAI) && b?.THELOAI.includes(selectedGenre.value));
+    }
+
+    // Tìm kiếm theo tên
+    if (searchQuery.value?.trim()) {
+      const q = removeVietnameseTones(searchQuery.value.trim().toLowerCase());
+      books = books.filter(b => removeVietnameseTones(b.TENSACH.toLowerCase()).includes(q));
+    }
+
+    return books;
+  });
+
+  // Tính tổng số trang
+  const totalPage = computed(() => Math.ceil(filterBooks.value.length / bookInPage));
+
+  const showBooks = computed(() => {
+    // Đảm bảo currentPage không lớn hơn totalPage
+    if (currentPage.value > totalPage.value && totalPage.value > 0) {
+      currentPage.value = totalPage.value;
+    }
+    const start = bookInPage * (currentPage.value - 1);
+
+    return filterBooks.value.slice(start, start + bookInPage);
+  })
 
   // Hàm chuyển qua trang xem chi tiết sách
   const showBook = (bookId) => {
@@ -51,6 +89,7 @@
           </v-col>
           <v-col cols="12" md="6">
             <v-text-field
+              v-model="searchQuery"
               variant="outlined"
               rounded="xl"
               label="Tìm kiếm sách"
@@ -61,26 +100,44 @@
           </v-col>
         </v-row>
 
+        <!-- Skeleton thể loại -->
+        <v-row v-if="genreStore.loading" class="mb-8" no-gutters>
+          <v-col cols="12">
+            <h2 class="section-title mb-4">
+              <v-icon size="28" class="mr-2">mdi-filter-variant</v-icon>
+              Thể Loại
+            </h2>
+            <v-sheet class="d-flex">
+              <v-skeleton-loader
+                v-for="n in 6"
+                :key="n"
+                type="chip"
+                width="150"
+              />
+            </v-sheet>
+          </v-col>
+        </v-row>
+
         <!-- Thể loại -->
-        <v-row class="mb-8" no-gutters>
+        <v-row v-else class="mb-8" no-gutters>
           <v-col cols="12">
             <h2 class="section-title mb-4">
               <v-icon size="28" class="mr-2">mdi-filter-variant</v-icon>
               Thể Loại
             </h2>
             <v-chip-group
+              v-model="selectedGenre"
               column
             >
               <v-chip
-                v-for="genre in genres"
-                :key="genre.name"
-                :value="genre.name"
+                v-for="genre in genreStore.genres"
+                :key="genre.MATHELOAI"
+                :value="genre.MATHELOAI"
                 variant="outlined"
                 size="large"
                 class="elevation-0 mx-2 genre-chip"
-                :style="{ '--chip-color': genre.color }"
               >
-                {{ genre.name }}
+                {{ genre.TENTHELOAI }}
               </v-chip>
             </v-chip-group>
           </v-col>
@@ -132,7 +189,7 @@
             <!-- Card sách -->
             <v-row>
               <v-col
-                v-for="book in bookStore.books"
+                v-for="book in showBooks"
                 :key="book.MASACH"
                 cols="6"
                 sm="4"
@@ -192,6 +249,9 @@
             </v-row>
           </v-col>
         </v-row>
+
+        <!-- Pagination -->
+        <Pagination v-model="currentPage" :length="totalPage"></Pagination>
       </v-col>
     </v-row>
   </v-container>
@@ -235,19 +295,19 @@
   text-transform: none;
   transition: all 0.3s ease;
   background: white;
-  border: 2px solid var(--chip-color);
+  border: 2px solid rgb(var(--v-theme-primary));
 }
 
 .genre-chip:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  background: var(--chip-color);
+  background: rgb(var(--v-theme-primary));
   color: white;
-  border-color: var(--chip-color);
+  border-color: rgb(var(--v-theme-primary));
 }
 
 .genre-chip.v-chip--selected {
-  background: var(--chip-color);
+  background: rgb(var(--v-theme-primary));
   color: white;
   transform: scale(1.1);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);

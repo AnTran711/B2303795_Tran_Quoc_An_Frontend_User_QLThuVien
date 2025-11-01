@@ -13,19 +13,19 @@ import BookNotFound from "@/views/BookNotFound.vue";
 const routes = [
   {
     path: '/',
-    name: 'Home',
     component: DefaultLayout,
     children: [
       {
-        path: '/',
+        path: '',
+        name: 'Home',
         component: Home
       },
       {
-        path: '/book/:bookId',
+        path: 'book/:bookId',
         component: DetailBook
       },
       // {
-      //   path: '/history',
+      //   path: 'history',
       //   component: 
       // }
     ]
