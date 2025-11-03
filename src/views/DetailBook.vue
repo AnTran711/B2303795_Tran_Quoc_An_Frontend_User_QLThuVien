@@ -21,11 +21,18 @@
 
   // Mượn sách
   const showBorrowConfirm = ref(false);
+  const showLoginNotification = ref(false);
 
-  const openBorrowConfirm = () => {
-    showBorrowConfirm.value = true;
+  // Bật xác nhận mượn sách hoặc xác nhận chuyển sang trang đăng nhập nếu người dùng chưa đăng nhập
+  const openConfirm = () => {
+    if (!readerStore.reader) {
+      showLoginNotification.value = true;
+    } else {
+      showBorrowConfirm.value = true;
+    }
   }
 
+  // Hàm xử lý mượn sách
   const borrowBook = async () => {
     // Logic mượn sách
     if (readerStore.reader && bookStore.currentBook) {
@@ -39,9 +46,16 @@
     showBorrowConfirm.value = false;
   };
 
+  // Hàm bỏ qua hành động mượn sách
   const cancelBorrow = () => {
     showBorrowConfirm.value = false;
   }
+
+  // Hàm từ chối chuyển hướng sang trang đăng nhập
+  const cancelDirect = () => {
+    showLoginNotification.value = false;
+  }
+
 </script>
 
 <template>
@@ -256,7 +270,7 @@
               rounded="lg"
               class="borrow-btn"
               prepend-icon="mdi-book-open-variant"
-              @click="openBorrowConfirm"
+              @click="openConfirm"
               :disabled="bookStore.currentBook?.SACHCONLAI <= 0"
             >
               {{ bookStore.currentBook?.SACHCONLAI > 0 ? 'Mượn sách' : 'Hết sách' }}
@@ -290,6 +304,31 @@
       </v-card-actions>
     </v-card>
   </v-overlay>
+
+  <!-- Phần xác nhận chuyển hướng -->
+  <v-overlay
+    v-model="showLoginNotification"
+    class="align-center justify-center"
+    @update:model-value="(val) => { if(!val) cancelDirect() }"
+  >
+    <v-card>
+      <v-card-title>Bạn chưa đăng nhập</v-card-title>
+      <v-card-text>
+        Vui lòng đăng nhập để mượn sách
+      </v-card-text>
+      <v-card-actions class="justify-end">
+        <v-btn
+          variant="elevated"
+          color="primary"
+          to="/auth/login"
+        >
+          Đăng nhập
+        </v-btn>
+        <v-btn variant="tonal" @click="cancelDirect">Hủy</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-overlay>
+  
 </template>
 
 <style scoped>

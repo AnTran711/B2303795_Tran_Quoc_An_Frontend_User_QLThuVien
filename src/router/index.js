@@ -9,6 +9,7 @@ import NotFound from "@/views/NotFound.vue";
 import Home from "@/views/Home.vue";
 import DetailBook from "@/views/DetailBook.vue";
 import BookNotFound from "@/views/BookNotFound.vue";
+import BorrowHistory from "@/views/BorrowHistory.vue";
 
 const routes = [
   {
@@ -24,10 +25,10 @@ const routes = [
         path: 'book/:bookId',
         component: DetailBook
       },
-      // {
-      //   path: 'history',
-      //   component: 
-      // }
+      {
+        path: 'history',
+        component: BorrowHistory
+      }
     ]
   },
   {
