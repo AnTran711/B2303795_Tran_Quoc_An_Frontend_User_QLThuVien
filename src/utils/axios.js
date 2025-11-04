@@ -3,6 +3,7 @@ import { toast } from 'vue3-toastify';
 import { useBookStore } from '@/stores/useBookStore';
 import { useGenreStore } from '@/stores/useGenreStore';
 import { useReaderStore } from '@/stores/useReaderStore';
+import { useBorrowRecordStore } from '@/stores/useBorrowRecordStore';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000/api',
@@ -17,9 +18,11 @@ api.interceptors.request.use(
     // set trạng thái loading
     const bookStore = useBookStore();
     const genreStore = useGenreStore();
-
+    const borrowRecordStore = useBorrowRecordStore();
+    
     bookStore.loading = true;
     genreStore.loading = true;
+    borrowRecordStore.loading = true;
 
     return config;
   },
@@ -27,9 +30,11 @@ api.interceptors.request.use(
     // Do something with request error
     const bookStore = useBookStore();
     const genreStore = useGenreStore();
-
+    const borrowRecordStore = useBorrowRecordStore();
+    
     bookStore.loading = false;
     genreStore.loading = false;
+    borrowRecordStore.loading = false;
 
     return Promise.reject(error);
   }
@@ -49,9 +54,11 @@ api.interceptors.response.use(
   (response) => {
     const bookStore = useBookStore();
     const genreStore = useGenreStore();
-
+    const borrowRecordStore = useBorrowRecordStore();
+    
     bookStore.loading = false;
     genreStore.loading = false;
+    borrowRecordStore.loading = false;
 
     return response;
   },
@@ -59,9 +66,11 @@ api.interceptors.response.use(
     const bookStore = useBookStore();
     const genreStore = useGenreStore();
     const readerStore = useReaderStore();
-
+    const borrowRecordStore = useBorrowRecordStore();
+    
     bookStore.loading = false;
     genreStore.loading = false;
+    borrowRecordStore.loading = false;
     
     // Lấy ra các request lỗi đang chờ refresh
     const originalRequest = error.config;

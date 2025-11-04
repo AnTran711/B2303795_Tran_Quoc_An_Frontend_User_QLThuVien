@@ -3,13 +3,14 @@
   import { useBookStore } from '@/stores/useBookStore';
   import { onMounted, ref } from 'vue';
   import { useReaderStore } from '@/stores/useReaderStore';
-  import api from '@/utils/axios';
   import { toast } from 'vue3-toastify';
+  import { useBorrowRecordStore } from '@/stores/useBorrowRecordStore';
 
   const route = useRoute();
   const router = useRouter();
   const bookStore = useBookStore();
   const readerStore = useReaderStore();
+  const borrowRecordStore = useBorrowRecordStore();
 
   onMounted(async () => {
     try {
@@ -34,16 +35,16 @@
 
   // Hàm xử lý mượn sách
   const borrowBook = async () => {
+    showBorrowConfirm.value = false;
+
     // Logic mượn sách
     if (readerStore.reader && bookStore.currentBook) {
-      const res = await api.post('/book-borrowing', {
-        MADOCGIA: readerStore.reader?.MADOCGIA,
-        MASACH: bookStore.currentBook?.MASACH
-      });
-      toast.success(res.data.message);
+      const res = await borrowRecordStore.borrow(
+        readerStore.reader?.MADOCGIA,
+        bookStore.currentBook?.MASACH
+      );
+      toast.success(res.message);
     }
-
-    showBorrowConfirm.value = false;
   };
 
   // Hàm bỏ qua hành động mượn sách
