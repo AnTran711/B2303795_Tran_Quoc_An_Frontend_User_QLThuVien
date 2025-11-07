@@ -1,32 +1,16 @@
 <script setup>
-  import { onMounted, ref } from 'vue';
-  import { useBookStore } from '@/stores/useBookStore';
+  import { onMounted, ref, watch } from 'vue';
   import { useBorrowRecordStore } from '@/stores/useBorrowRecordStore';
   import { useReaderStore } from '@/stores/useReaderStore';
   import { useRoute, useRouter } from 'vue-router';
+  import { toast } from 'vue3-toastify';
   
 
-  const bookStore = useBookStore();
   const readerStore = useReaderStore();
   const borrowRecordStore = useBorrowRecordStore();
 
   const route = useRoute();
   const router = useRouter();
-
-  onMounted(async () => {
-    // Nếu URL có query thì đồng bộ lại
-    if (route.query.filter) selectedFilter.value = route.query.filter;
-    if (route.query.sort) selectedSort.value = route.query.sort;
-    if (route.query.search) searchQuery.value = route.query.search;
-
-    // Gọi API lần đầu
-    await borrowRecordStore.fetchBorrowRecords(
-      selectedFilter.value,
-      selectedSort.value,
-      searchQuery.value,
-      readerStore.reader?.MADOCGIA
-    );
-  })
 
   // Lọc
   const filterItems = [
@@ -69,6 +53,106 @@
   // Tìm kiếm
   const searchQuery = ref('');
 
+  // Biến để delay khi người dùng gõ nhanh, nếu người dùng ngừng gõ 0.5s thì call API
+  let debounceTimer = null;
+
+  // Biến để xác định khi nào thì load trạng thái từ URL xong
+  let isInitialized = ref(false);
+
+  const fetchData = async () => {
+    // Hủy bỏ setTimeout cũ của kí tự được nhập vào trước đó
+    clearTimeout(debounceTimer);
+
+    // Chỉ khi người dùng ngưng gõ 0.5s thì call API
+    debounceTimer = setTimeout(async () => {
+      if (isInitialized.value) {
+        router.push({
+          path: '/history',
+          query: {
+            filter: selectedFilter.value,
+            sort: selectedSort.value,
+            search: searchQuery.value
+          }
+        });
+      }
+
+      await borrowRecordStore.fetchBorrowRecords(
+        selectedFilter.value,
+        selectedSort.value,
+        searchQuery.value,
+        readerStore.reader?.MADOCGIA
+      )
+    }, isInitialized.value ? 500 : 0); // Lần đầu không delay
+  };
+
+  watch(
+    [selectedFilter, selectedSort, searchQuery],
+    () => {
+      if (isInitialized.value) {
+        fetchData();
+      }
+    }
+  );
+
+  // Phần hủy yêu cầu mượn sách
+  const recordSelectedId = ref(null);
+
+  const showCancelRequestConfirm = ref(false);
+
+  const openCancelRequestConfirm = (recordId) => {
+    recordSelectedId.value = recordId;
+    showCancelRequestConfirm.value = true;
+  }
+
+  // Hàm hủy yêu cầu
+  const cancelRequest = async () => {
+    showCancelRequestConfirm.value = false;
+
+    if (recordSelectedId.value) {
+      const res = await borrowRecordStore.cancelRequest(recordSelectedId.value);
+      toast.success(res.message);
+
+      recordSelectedId.value = null;
+    }
+  }
+
+  // Hàm bỏ qua việc hủy yêu cầu, không thực hiện hủy yêu cầu nữa
+  const cancelConfirm = () => {
+    recordSelectedId.value = null;
+    showCancelRequestConfirm.value = false;
+  }
+
+  // Phần mượn lại sách
+  const selectedBookId = ref(null);
+  
+  const showBorrowAgainConfirm = ref(false);
+
+  const openBorrowAgainConfirm = (bookId) => {
+    selectedBookId.value = bookId;
+    showBorrowAgainConfirm.value = true;
+  }
+
+  // Hàm mượn lại sách
+  const borrowAgain = async () => {
+    showBorrowAgainConfirm.value = false;
+    
+    if (selectedBookId.value && readerStore.reader) {
+      const res = await borrowRecordStore.borrow(
+        readerStore.reader.MADOCGIA,
+        selectedBookId.value
+      );
+      toast.success(res.message);
+
+      selectedBookId.value = null;
+    }
+  }
+
+  // Hàm hủy mượn lại
+  const cancelBorrowAgain = () => {
+    selectedBookId.value = null;
+    showBorrowAgainConfirm.value = false;
+  }
+
   // Hàm lấy ra trạng thái
   const getStatusText = (value) => {
     return filterItems.find(i => i.value === value).title;
@@ -83,6 +167,18 @@
   const showBook = (bookId) => {
     router.push(`/book/${bookId}`);
   }
+
+  onMounted(async () => {
+    // Nếu URL có query thì đồng bộ lại
+    if (route.query.filter) selectedFilter.value = route.query.filter;
+    if (route.query.sort) selectedSort.value = route.query.sort;
+    if (route.query.search) searchQuery.value = route.query.search;
+
+    // Gọi API lần đầu
+    await fetchData();
+
+    isInitialized.value = true;
+  })
 </script>
 
 <template>
@@ -139,6 +235,7 @@
               hide-details
               color="primary"
               prepend-inner-icon="mdi-magnify"
+              clearable
             />
           </v-col>
         </v-row>
@@ -272,7 +369,7 @@
                       </v-btn>
 
                       <v-btn
-
+                        @click="openBorrowAgainConfirm(record.MASACH)"
                         v-if="record.TRANGTHAI === 'returned' || record.TRANGTHAI === 'rejected'"
                         variant="outlined"
                         color="primary"
@@ -284,7 +381,7 @@
                       </v-btn>
 
                       <v-btn
-
+                        @click="openCancelRequestConfirm(record._id)"
                         v-if="record.TRANGTHAI === 'pending'"
                         variant="outlined"
                         color="primary"
@@ -305,6 +402,54 @@
       </v-col>
     </v-row>
   </v-container>
+
+  <!-- Cancel request confirm -->
+  <v-overlay
+    v-model="showCancelRequestConfirm"
+    class="align-center justify-center"
+    @update:model-value="(val) => { if(!val) cancelConfirm() }"
+  >
+    <v-card>
+      <v-card-title>Xác nhận hủy yêu cầu</v-card-title>
+      <v-card-text>
+        Bạn có chắc chắn muốn hủy yêu cầu mượn sách này không?
+      </v-card-text>
+      <v-card-actions class="justify-end">
+        <v-btn
+          variant="elevated"
+          color="primary"
+          @click="cancelRequest"
+        >
+          Hủy yêu cầu
+        </v-btn>
+        <v-btn variant="tonal" @click="cancelConfirm">Hủy</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-overlay>
+
+  <!-- Borrow book again -->
+  <v-overlay
+    v-model="showBorrowAgainConfirm"
+    class="align-center justify-center"
+    @update:model-value="(val) => { if(!val) cancelBorrowAgain() }"
+  >
+    <v-card>
+      <v-card-title>Xác nhận mượn lại sách</v-card-title>
+      <v-card-text>
+        Bạn có chắc chắn muốn mượn lại cuốn sách này không?
+      </v-card-text>
+      <v-card-actions class="justify-end">
+        <v-btn
+          variant="elevated"
+          color="primary"
+          @click="borrowAgain"
+        >
+          Mượn sách
+        </v-btn>
+        <v-btn variant="tonal" @click="cancelBorrowAgain">Hủy</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-overlay>
 </template>
 
 <style scoped>

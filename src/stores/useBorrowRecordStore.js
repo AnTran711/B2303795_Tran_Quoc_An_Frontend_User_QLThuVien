@@ -19,8 +19,17 @@ export const useBorrowRecordStore = defineStore('borrowRecord', () => {
       MADOCGIA: readerId,
       MASACH: bookId
     });
+
     return res.data;
   }
 
-  return { borrowRecords, loading, fetchBorrowRecords, borrow }
+  async function cancelRequest(recordId) {
+    const res = await api.delete(`/borrow-records/cancel-request/${recordId}`);
+    borrowRecords.value = borrowRecords.value.filter(
+      r => r._id !== res.data.data._id
+    );
+    return res.data;
+  }
+
+  return { borrowRecords, loading, fetchBorrowRecords, borrow, cancelRequest }
 });

@@ -291,7 +291,7 @@
     <v-card>
       <v-card-title>Xác nhận mượn sách</v-card-title>
       <v-card-text>
-        Vui lòng nhấn xác nhận để mượn sách
+        Bạn có chắc chắn muốn mượn cuốn sách này không?
       </v-card-text>
       <v-card-actions class="justify-end">
         <v-btn
@@ -299,7 +299,7 @@
           color="primary"
           @click="borrowBook"
         >
-          Xác nhận
+          Mượn sách
         </v-btn>
         <v-btn variant="tonal" @click="cancelBorrow">Hủy</v-btn>
       </v-card-actions>
