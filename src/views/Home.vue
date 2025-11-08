@@ -225,8 +225,14 @@
                     <v-chip
                       class="mt-4"
                       :color="book.SACHCONLAI > 0 ? 'success' : 'error'"
+                      variant="flat"
                     >
-                      Còn {{ book.SACHCONLAI }} quyển
+                      <span class="font-weight-bold">
+                        {{ book.SACHCONLAI > 0 
+                          ? `Còn ${book.SACHCONLAI} quyển` 
+                          : 'Hết sách' 
+                        }}
+                      </span>
                     </v-chip>
                   </v-card-text>
 

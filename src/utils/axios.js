@@ -4,6 +4,7 @@ import { useBookStore } from '@/stores/useBookStore';
 import { useGenreStore } from '@/stores/useGenreStore';
 import { useReaderStore } from '@/stores/useReaderStore';
 import { useBorrowRecordStore } from '@/stores/useBorrowRecordStore';
+import router from '@/router';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000/api',
@@ -86,7 +87,7 @@ api.interceptors.response.use(
             return data.data;
           })
           .catch (refreshTokenError => {
-            readerStore.logout();
+            readerStore.logout().then(() => router.push('/auth/login'));
             return Promise.reject(refreshTokenError);
           })
           .finally (() => {
@@ -102,7 +103,7 @@ api.interceptors.response.use(
 
     // Nếu refresh token hết hạn, bắt buộc đăng xuất
     if (error.response?.status === 401) {
-      readerStore.logout();
+      readerStore.logout().then(() => router.push('/auth/login'));
     }
 
 
@@ -113,7 +114,7 @@ api.interceptors.response.use(
     }
     
     // Nếu không phải lỗi 410 (hết token) thì toast message
-    if (error.response?.status !== 410) {
+    if (error.response?.status !== 410 && error.response?.status !== 403) {
       toast.error(errorMessage);
     }
 

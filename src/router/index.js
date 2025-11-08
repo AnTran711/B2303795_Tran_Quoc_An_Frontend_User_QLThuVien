@@ -75,6 +75,8 @@ router.beforeEach((to, from, next) => {
   const readerStore = useReaderStore();
   if ((to.path === '/auth/login' || to.path === '/auth/register') && readerStore.reader) {
     next('/');
+  } else if (to.path === '/history' && !readerStore.reader) {
+    next('/auth/login');
   } else {
     next();
   }
