@@ -10,6 +10,7 @@ import Home from "@/views/Home.vue";
 import DetailBook from "@/views/DetailBook.vue";
 import BookNotFound from "@/views/BookNotFound.vue";
 import BorrowHistory from "@/views/BorrowHistory.vue";
+import ChangePassword from "@/components/ChangePassword.vue";
 
 const routes = [
   {
@@ -46,6 +47,10 @@ const routes = [
       {
         path: 'register',
         component: Register
+      },
+      {
+        path: 'change-password',
+        component: ChangePassword
       }
     ]
   },

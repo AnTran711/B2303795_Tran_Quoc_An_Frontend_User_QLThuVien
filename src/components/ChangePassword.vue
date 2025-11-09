@@ -1,26 +1,14 @@
 <script setup>
-  import { nextTick, onMounted, reactive, ref } from 'vue';
+  import { nextTick, reactive, ref } from 'vue';
   import { toast } from 'vue3-toastify';
-  import { useRoute } from 'vue-router';
   import { rules } from '@/utils/rules.js';
-  import { useReaderStore } from '@/stores/useReaderStore';
   import { useRouter } from 'vue-router';
-
+  import { useReaderStore } from '@/stores/useReaderStore';
   // Store
   const readerStore = useReaderStore();
 
   // Router
   const router = useRouter();
-
-  // Xử lí hiện toast khi đăng ký thành công
-  const route = useRoute();
-  onMounted(() => {
-    if (route.query.registeredPhone) {
-      toast.success('Đăng ký tài khoản thành công');
-    } else if (route.query.changedPasswordPhone) {
-      toast.success('Đổi mật khẩu thành công');
-    }
-  });
 
   // Xử lý gửi thông tin
 
@@ -28,13 +16,14 @@
   const formRef = ref(null);
 
   // Object chứa dữ liệu người dùng nhập
-  const readerLogin = reactive({
+  const readerChangePassword = reactive({
     DIENTHOAI: null,
-    MATKHAU: null
+    MATKHAU: null,
+    MATKHAUMOI: null
   });
 
   // Hàm xử lý gửi form
-  const login = async () => {
+  const changePassword = async () => {
     // Kiểm tra dữ liệu có hợp lệ hay không
     const { valid } = await formRef.value.validate();
 
@@ -43,31 +32,60 @@
       return;
     }
 
-    await readerStore.login(readerLogin);
+    await readerStore.changePassword(readerChangePassword);
 
-    router.push('/');
+    await readerStore.logout();
+
+    router.push(`/auth/login?changedPasswordPhone=${readerChangePassword.DIENTHOAI}`);
   }
 
   // Xử lý ẩn/hiện mật khẩu
-  const showPwd = ref(false);
-  const pwdField = ref(null);
 
-  async function togglePwd() {
+  // Mật khẩu cũ
+  const showOldPwd = ref(false);
+  const oldPwdField = ref(null);
+
+  // Mật khẩu mới
+  const showNewPwd = ref(false);
+  const newPwdField = ref(null);
+
+  // Xác nhận mật khẩu mới
+  const showNewPwdConfirm = ref(false);
+  const newPwdConfirmField = ref(null);
+
+  async function togglePwd(type) {
+    // Xử lý xem input gọi hàm là trường nào
+    let isShow;
+    let fieldRef;
+    switch (type) {
+      case 'old-password':
+        isShow = showOldPwd;
+        fieldRef = oldPwdField;
+        break;
+      case 'new-password':
+        isShow = showNewPwd;
+        fieldRef = newPwdField;
+        break;
+      default:
+        isShow = showNewPwdConfirm;
+        fieldRef = newPwdConfirmField;
+    }
+
     // Lấy thẻ input
-    const input = pwdField.value?.$el?.querySelector('input');
+    const input = fieldRef.value?.$el?.querySelector('input');
     if(!input) return;
 
     // Lưu vị trí con trỏ hiện tại
     const pos = (typeof input.selectionStart === 'number') ? input.selectionStart : input.value.length;
 
     // Toggle trạng thái của password
-    showPwd.value = !showPwd.value;
+    isShow.value = !isShow.value;
 
     // Đợi vue cập nhật lại DOM sau ghi toggle trạng thái
     await nextTick();
 
     // Lấy thẻ input sau khi DOM cập nhật lại
-    const newInput = pwdField.value?.$el?.querySelector('input');
+    const newInput = fieldRef.value?.$el?.querySelector('input');
     if(!newInput) return;
 
     // Đợi thêm 1 frame để DOM render ổn định, đảm bảo browser đã vẽ xong input mới
@@ -77,7 +95,7 @@
       // Đặt con trỏ lại vị trí cũ
       const newPos = Math.min(pos, newInput.value.length);
       newInput.setSelectionRange(newPos, newPos);
-    });
+    })
   }
 </script>
 
@@ -85,13 +103,13 @@
   <v-container class="d-flex justify-center align-center">
     <!-- div bọc v-row để v-row không bung ra theo v-container -->
     <div style="width: 800px;">
-      <v-row class="login-container rounded-xl" no-gutters>
+      <v-row class="change-password-container rounded-xl" no-gutters>
         <!-- Phần hình ảnh trang trí -->
         <v-col cols="6" class="pa-8 image-panel">
           <v-img :width="400" src="/imgs/logo_ten.png"></v-img>
         </v-col>
     
-        <!-- Phần form đăng nhập -->
+        <!-- Phần form đổi mật khẩu -->
         <v-col cols="6" class="form-panel">
           <v-card
             class="pa-8 rounded-0"
@@ -100,14 +118,14 @@
             elevation="0"
           >
             <v-card-title class="text-center">
-              <h1>Đăng nhập</h1>
+              <h1>Đổi mật khẩu</h1>
             </v-card-title>
             <v-card-text class="pt-4">
-              <!-- form đăng nhập -->
-              <v-form ref="formRef" @keyup.enter="login">
-                <!-- Dùng số điện thoại để đăng nhập thay cho username -->
+              <!-- form đổi mật khẩu -->
+              <v-form ref="formRef" @keyup.enter="changePassword">
+                <!-- Dùng số điện thoại để đổi mật khẩu -->
                 <v-text-field
-                  v-model="readerLogin.DIENTHOAI"
+                  v-model="readerChangePassword.DIENTHOAI"
                   label="Số điện thoại"
                   variant="outlined"
                   prepend-inner-icon="mdi-phone"
@@ -115,32 +133,63 @@
                   clearable
                   :rules="[rules.required]"
                 />
+                <!-- Mật khẩu cũ -->
                 <v-text-field
-                  v-model="readerLogin.MATKHAU"
-                  ref="pwdField"
+                  v-model="readerChangePassword.MATKHAU"
+                  ref="oldPwdField"
                   class="mt-2"
-                  label="Mật khẩu"
+                  label="Mật khẩu cũ"
                   variant="outlined"
                   density="comfortable"
                   prepend-inner-icon="mdi-lock-outline"
-                  :append-inner-icon="showPwd ? 'mdi-eye' : 'mdi-eye-off'"
-                  :type="showPwd ? 'text' : 'password'"
-                  @click:append-inner="togglePwd"
+                  :append-inner-icon="showOldPwd ? 'mdi-eye' : 'mdi-eye-off'"
+                  :type="showOldPwd ? 'text' : 'password'"
+                  @click:append-inner="togglePwd('old-password')"
                   clearable
                   :rules="[rules.required]"
+                />
+                <!-- Mật khẩu mới -->
+                <v-text-field
+                  v-model="readerChangePassword.MATKHAUMOI"
+                  ref="newPwdField"
+                  class="mt-2"
+                  label="Mật khẩu mới"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-lock-outline"
+                  :append-inner-icon="showNewPwd ? 'mdi-eye' : 'mdi-eye-off'"
+                  :type="showNewPwd ? 'text' : 'password'"
+                  @click:append-inner="togglePwd('new-password')"
+                  clearable
+                  :rules="[rules.required]"
+                />
+
+                <!-- Xác nhận mật khẩu -->
+                <v-text-field
+                  ref="newPwdConfirmField"
+                  class="mt-2"
+                  label="Nhập lại mật khẩu mới"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-lock-outline"
+                  :append-inner-icon="showNewPwdConfirm ? 'mdi-eye' : 'mdi-eye-off'"
+                  :type="showNewPwdConfirm ? 'text' : 'password'"
+                  @click:append-inner="togglePwd('confirm-new-password')"
+                  clearable
+                  :rules="[rules.required, rules.confirm(readerChangePassword.MATKHAUMOI)]"
                 />
               </v-form>
             </v-card-text>
             <v-card-actions class="pa-4 pt-0 d-flex flex-column ga-8">
-              <!-- Nút đăng nhập -->
+              <!-- Nút đổi mật khẩu -->
               <v-btn
                 height="50"
                 class="w-100"
                 color="primary"
                 variant="elevated"
-                @click="login"
+                @click="changePassword"
               >
-                Đăng nhập
+                Đổi mật khẩu
               </v-btn>
               <!-- Nút về trang chủ -->
               <v-btn
@@ -153,13 +202,6 @@
                 <v-icon class="mr-2">mdi-home</v-icon>
                 Về trang chủ
               </v-btn>
-              <!-- Phần này để chuyển qua trang đăng ký -->
-              <div>
-                Bạn chưa có tài khoản?
-                <router-link to="/auth/register" style="text-decoration: none;">
-                  Đăng ký ngay
-                </router-link>
-              </div>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -170,7 +212,7 @@
 
 <style scoped>
   /* Phần bọc 2 panel hình ảnh và form */
-  .login-container {
+  .change-password-container {
     display: flex;
     justify-content: center;
     align-items: center;

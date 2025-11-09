@@ -25,6 +25,11 @@ export const useReaderStore = defineStore('reader', () => {
     return res.data;
   }
 
+  async function changePassword(readerChangePassword) {
+    const res = await api.post('/auth/change-password', readerChangePassword);
+    return res.data;
+  }
+
   function getFullName() {
     if (!reader.value) return '';
     return reader.value.HOLOT + ' ' + reader.value.TEN;
@@ -35,7 +40,7 @@ export const useReaderStore = defineStore('reader', () => {
     return reader.value.TEN;
   }
 
-  return { reader, loading, register, login, logout, getFullName, getName };
+  return { reader, loading, register, login, logout, changePassword, getFullName, getName };
 }, {
   persist: {
     key: 'reader',

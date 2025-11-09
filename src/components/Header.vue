@@ -104,6 +104,8 @@
 
               <!-- Danh sách chức năng -->
               <v-list>
+                <v-list-item to="/auth/change-password" prepend-icon="mdi-lock-reset" title="Đổi mật khẩu" />
+                <v-divider></v-divider>
                 <v-list-item @click="logout" prepend-icon="mdi-logout" title="Đăng xuất" />
               </v-list>
             </v-menu>
