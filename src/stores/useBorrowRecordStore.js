@@ -9,7 +9,14 @@ export const useBorrowRecordStore = defineStore('borrowRecord', () => {
 
   // action
   async function fetchBorrowRecords(filter = 'all', sort = 'desc', search = '', readerId) {
-    const res = await api.get(`/borrow-records?filter=${filter}&sort=${sort}&search=${search}&readerId=${readerId}`);
+    const res = await api.get('/borrow-records', {
+      params: {
+        filter,
+        sort,
+        search,
+        readerId
+      }
+    });
     borrowRecords.value = res.data.data;
     return res.data;
   }

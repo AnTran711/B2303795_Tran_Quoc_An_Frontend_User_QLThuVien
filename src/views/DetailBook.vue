@@ -1,62 +1,61 @@
 <script setup>
-  import { useRoute, useRouter } from 'vue-router';
-  import { useBookStore } from '@/stores/useBookStore';
-  import { onMounted, ref } from 'vue';
-  import { useReaderStore } from '@/stores/useReaderStore';
-  import { toast } from 'vue3-toastify';
-  import { useBorrowRecordStore } from '@/stores/useBorrowRecordStore';
+import { useRoute, useRouter } from 'vue-router';
+import { useBookStore } from '@/stores/useBookStore';
+import { onMounted, ref } from 'vue';
+import { useReaderStore } from '@/stores/useReaderStore';
+import { toast } from 'vue3-toastify';
+import { useBorrowRecordStore } from '@/stores/useBorrowRecordStore';
 
-  const route = useRoute();
-  const router = useRouter();
-  const bookStore = useBookStore();
-  const readerStore = useReaderStore();
-  const borrowRecordStore = useBorrowRecordStore();
+const route = useRoute();
+const router = useRouter();
+const bookStore = useBookStore();
+const readerStore = useReaderStore();
+const borrowRecordStore = useBorrowRecordStore();
 
-  onMounted(async () => {
-    try {
-      await bookStore.fetchBook(route.params.bookId);
-    } catch (error) {
-      router.push('/book-not-found');
-    }
-  });
-
-  // Mượn sách
-  const showBorrowConfirm = ref(false);
-  const showLoginNotification = ref(false);
-
-  // Bật xác nhận mượn sách hoặc xác nhận chuyển sang trang đăng nhập nếu người dùng chưa đăng nhập
-  const openConfirm = () => {
-    if (!readerStore.reader) {
-      showLoginNotification.value = true;
-    } else {
-      showBorrowConfirm.value = true;
-    }
+onMounted(async () => {
+  try {
+    await bookStore.fetchBook(route.params.bookId);
+  } catch (error) {
+    router.push('/book-not-found');
   }
+});
 
-  // Hàm xử lý mượn sách
-  const borrowBook = async () => {
-    showBorrowConfirm.value = false;
+// Mượn sách
+const showBorrowConfirm = ref(false);
+const showLoginNotification = ref(false);
 
-    // Logic mượn sách
-    if (readerStore.reader && bookStore.currentBook) {
-      const res = await borrowRecordStore.borrow(
-        readerStore.reader?.MADOCGIA,
-        bookStore.currentBook?.MASACH
-      );
-      toast.success(res.message);
-    }
-  };
-
-  // Hàm bỏ qua hành động mượn sách
-  const cancelBorrow = () => {
-    showBorrowConfirm.value = false;
+// Bật xác nhận mượn sách hoặc xác nhận chuyển sang trang đăng nhập nếu người dùng chưa đăng nhập
+const openConfirm = () => {
+  if (!readerStore.reader) {
+    showLoginNotification.value = true;
+  } else {
+    showBorrowConfirm.value = true;
   }
+};
 
-  // Hàm từ chối chuyển hướng sang trang đăng nhập
-  const cancelDirect = () => {
-    showLoginNotification.value = false;
+// Hàm xử lý mượn sách
+const borrowBook = async () => {
+  showBorrowConfirm.value = false;
+
+  // Logic mượn sách
+  if (readerStore.reader && bookStore.currentBook) {
+    const res = await borrowRecordStore.borrow(
+      readerStore.reader?.MADOCGIA,
+      bookStore.currentBook?.MASACH
+    );
+    toast.success(res.message);
   }
+};
 
+// Hàm bỏ qua hành động mượn sách
+const cancelBorrow = () => {
+  showBorrowConfirm.value = false;
+};
+
+// Hàm từ chối chuyển hướng sang trang đăng nhập
+const cancelDirect = () => {
+  showLoginNotification.value = false;
+};
 </script>
 
 <template>
@@ -65,47 +64,25 @@
     <v-row v-if="bookStore.loading" class="main-section">
       <!-- Bìa sách loading -->
       <v-col cols="12" md="4" lg="3">
-        <v-skeleton-loader
-          type="image"
-          height="500"
-        />
+        <v-skeleton-loader type="image" height="500" />
       </v-col>
 
       <!-- Phần chi tiết sách -->
       <v-col cols="12" md="8" lg="9">
         <div class="book-details">
           <!-- Trạng thái -->
-          <v-skeleton-loader
-            type="chip"
-            width="150"
-            class="mb-4"
-          />
+          <v-skeleton-loader type="chip" width="150" class="mb-4" />
 
           <!-- Tên sách -->
-          <v-skeleton-loader
-            type="heading"
-            class="mb-3"
-          />
+          <v-skeleton-loader type="heading" class="mb-3" />
 
           <!-- Tác giả -->
-          <v-skeleton-loader
-            type="list-item-avatar"
-            class="mb-4"
-          />
+          <v-skeleton-loader type="list-item-avatar" class="mb-4" />
 
           <!-- Thể loại -->
-          <v-skeleton-loader
-            type="chip"
-            width="100"
-            class="mb-2"
-          />
+          <v-skeleton-loader type="chip" width="100" class="mb-2" />
           <div class="d-flex gap-2 mb-4">
-            <v-skeleton-loader
-              v-for="n in 3"
-              :key="n"
-              type="chip"
-              width="80"
-            />
+            <v-skeleton-loader v-for="n in 3" :key="n" type="chip" width="80" />
           </div>
 
           <!-- Divider -->
@@ -114,33 +91,20 @@
           <!-- Thông tin nhà xuất bản, năm xuất bản... -->
           <v-row class="mb-6">
             <v-col cols="12" sm="6">
-              <v-skeleton-loader
-                type="list-item-two-line"
-              />
+              <v-skeleton-loader type="list-item-two-line" />
             </v-col>
             <v-col cols="12" sm="6">
-              <v-skeleton-loader
-                type="list-item-two-line"
-              />
+              <v-skeleton-loader type="list-item-two-line" />
             </v-col>
           </v-row>
 
           <!-- Mô tả sách -->
-          <v-skeleton-loader
-            type="heading"
-            class="mb-3"
-          />
-          <v-skeleton-loader
-            type="paragraph"
-            class="mb-6"
-          />
+          <v-skeleton-loader type="heading" class="mb-3" />
+          <v-skeleton-loader type="paragraph" class="mb-6" />
 
           <!-- Nút mượn sách -->
           <div class="action-section">
-            <v-skeleton-loader
-              type="button"
-              width="150"
-            />
+            <v-skeleton-loader type="button" width="150" />
           </div>
         </div>
       </v-col>
@@ -157,11 +121,7 @@
           cover
         >
           <template v-slot:error>
-            <v-img
-              aspect-ratio="2/3"
-              cover
-              src="/imgs/no-cover.png"
-            />
+            <v-img aspect-ratio="2/3" cover src="/imgs/no-cover.png" />
           </template>
         </v-img>
       </v-col>
@@ -178,9 +138,10 @@
             prepend-icon="mdi-bookshelf"
           >
             <span class="font-weight-bold">
-              {{ bookStore.currentBook?.SACHCONLAI > 0 
-                ? `Còn ${bookStore.currentBook.SACHCONLAI} quyển` 
-                : 'Hết sách' 
+              {{
+                bookStore.currentBook?.SACHCONLAI > 0
+                  ? `Còn ${bookStore.currentBook?.SACHCONLAI} quyển`
+                  : 'Hết sách'
               }}
             </span>
           </v-chip>
@@ -209,13 +170,13 @@
             <v-chip-group>
               <v-chip
                 v-for="genre in bookStore.currentBook?.DSTHELOAI"
-                :key="genre.MATHELOAI"
+                :key="genre?.MATHELOAI"
                 variant="tonal"
                 size="default"
                 class="genre-chip"
               >
                 <v-icon size="18" class="mr-1">mdi-tag</v-icon>
-                {{ genre.TENTHELOAI }}
+                {{ genre?.TENTHELOAI }}
               </v-chip>
             </v-chip-group>
           </div>
@@ -274,7 +235,9 @@
               @click="openConfirm"
               :disabled="bookStore.currentBook?.SACHCONLAI <= 0"
             >
-              {{ bookStore.currentBook?.SACHCONLAI > 0 ? 'Mượn sách' : 'Hết sách' }}
+              {{
+                bookStore.currentBook?.SACHCONLAI > 0 ? 'Mượn sách' : 'Hết sách'
+              }}
             </v-btn>
           </div>
         </div>
@@ -286,7 +249,11 @@
   <v-overlay
     v-model="showBorrowConfirm"
     class="align-center justify-center"
-    @update:model-value="(val) => { if(!val) cancelBorrow() }"
+    @update:model-value="
+      (val) => {
+        if (!val) cancelBorrow();
+      }
+    "
   >
     <v-card>
       <v-card-title>Xác nhận mượn sách</v-card-title>
@@ -294,11 +261,7 @@
         Bạn có chắc chắn muốn mượn cuốn sách này không?
       </v-card-text>
       <v-card-actions class="justify-end">
-        <v-btn
-          variant="elevated"
-          color="primary"
-          @click="borrowBook"
-        >
+        <v-btn variant="elevated" color="primary" @click="borrowBook">
           Mượn sách
         </v-btn>
         <v-btn variant="tonal" @click="cancelBorrow">Hủy</v-btn>
@@ -310,26 +273,23 @@
   <v-overlay
     v-model="showLoginNotification"
     class="align-center justify-center"
-    @update:model-value="(val) => { if(!val) cancelDirect() }"
+    @update:model-value="
+      (val) => {
+        if (!val) cancelDirect();
+      }
+    "
   >
     <v-card>
       <v-card-title>Bạn chưa đăng nhập</v-card-title>
-      <v-card-text>
-        Vui lòng đăng nhập để mượn sách
-      </v-card-text>
+      <v-card-text> Vui lòng đăng nhập để mượn sách </v-card-text>
       <v-card-actions class="justify-end">
-        <v-btn
-          variant="elevated"
-          color="primary"
-          to="/auth/login"
-        >
+        <v-btn variant="elevated" color="primary" to="/auth/login">
           Đăng nhập
         </v-btn>
         <v-btn variant="tonal" @click="cancelDirect">Hủy</v-btn>
       </v-card-actions>
     </v-card>
   </v-overlay>
-  
 </template>
 
 <style scoped>

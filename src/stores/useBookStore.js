@@ -11,17 +11,34 @@ export const useBookStore = defineStore('book', () => {
   //actions
 
   // Hàm lấy tất cả sách
-  async function fetchBooks() {
-    const res = await api.get('/books');
-    books.value = res.data.data;
-    return res.data;
+  async function fetchBooks(page = 1, limit = 5, search = '', genreId) {
+    try {
+      loading.value = true;
+      const res = await api.get('/books', {
+        params: {
+          page,
+          limit,
+          search,
+          genreId
+        }
+      });
+      books.value = res.data.data;
+      return res.data;
+    } finally {
+      loading.value = false;
+    }
   }
 
   // Hàm lấy 1 cuốn sách
   async function fetchBook(bookId) {
-    const res = await api.get(`/books/${bookId}`);
-    currentBook.value = res.data.data;
-    return res.data;
+    try {
+      loading.value = true;
+      const res = await api.get(`/books/${bookId}`);
+      currentBook.value = res.data.data;
+      return res.data;
+    } finally {
+      loading.value = false;
+    }
   }
 
   return { books, currentBook, loading, fetchBooks, fetchBook };

@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { toast } from 'vue3-toastify';
-import { useBookStore } from '@/stores/useBookStore';
 import { useGenreStore } from '@/stores/useGenreStore';
 import { useReaderStore } from '@/stores/useReaderStore';
 import { useBorrowRecordStore } from '@/stores/useBorrowRecordStore';
@@ -17,11 +16,9 @@ api.defaults.withCredentials = true;
 api.interceptors.request.use(
   (config) => {
     // set trạng thái loading
-    const bookStore = useBookStore();
     const genreStore = useGenreStore();
     const borrowRecordStore = useBorrowRecordStore();
     
-    bookStore.loading = true;
     genreStore.loading = true;
     borrowRecordStore.loading = true;
 
@@ -29,11 +26,9 @@ api.interceptors.request.use(
   },
   (error) => {
     // Do something with request error
-    const bookStore = useBookStore();
     const genreStore = useGenreStore();
     const borrowRecordStore = useBorrowRecordStore();
     
-    bookStore.loading = false;
     genreStore.loading = false;
     borrowRecordStore.loading = false;
 
@@ -53,23 +48,19 @@ const refreshTokenAPI = async () => {
 // Response Interceptors
 api.interceptors.response.use(
   (response) => {
-    const bookStore = useBookStore();
     const genreStore = useGenreStore();
     const borrowRecordStore = useBorrowRecordStore();
     
-    bookStore.loading = false;
     genreStore.loading = false;
     borrowRecordStore.loading = false;
 
     return response;
   },
   (error) => {
-    const bookStore = useBookStore();
     const genreStore = useGenreStore();
     const readerStore = useReaderStore();
     const borrowRecordStore = useBorrowRecordStore();
     
-    bookStore.loading = false;
     genreStore.loading = false;
     borrowRecordStore.loading = false;
     

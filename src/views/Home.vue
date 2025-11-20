@@ -1,67 +1,95 @@
 <script setup>
-  import Carousel from '@/components/Carousel.vue';
-  import Pagination from '@/components/Pagination.vue';
-  import { useBookStore } from '@/stores/useBookStore';
-  import { useGenreStore } from '@/stores/useGenreStore';
-  import { computed, ref, watch } from 'vue';
-  import { useRouter } from 'vue-router';
+import Carousel from '@/components/Carousel.vue';
+import Pagination from '@/components/Pagination.vue';
+import { useBookStore } from '@/stores/useBookStore';
+import { useGenreStore } from '@/stores/useGenreStore';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-  const router = useRouter();
+const router = useRouter();
+const route = useRoute();
 
-  const bookStore = useBookStore();
-  const genreStore = useGenreStore();
+const bookStore = useBookStore();
+const genreStore = useGenreStore();
 
-  // Hàm xóa dấu
-  function removeVietnameseTones(str) {
-    return str
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/đ/g, "d")
-      .replace(/Đ/g, "D");
+// Tìm kiếm + lọc
+const searchQuery = ref('');
+const selectedGenre = ref(null);
+
+// paging
+const bookInPage = ref(4);
+let currentPage = ref(1);
+let totalPages = ref(1);
+
+// Biến để delay khi người dùng gõ nhanh, sau khi người dùng ngưng gõ 0.5s thì mới call API
+let debounceTimer = null;
+
+// Biến để xác định khi nào thì load trạng thái từ URL xong
+let isInitialized = ref(false);
+
+const fetchData = async () => {
+  // Hủy bỏ setTimeout cũ của kí tự được nhập vào trước đó
+  clearTimeout(debounceTimer);
+
+  // Chỉ khi người dùng ngưng gõ 0.5s thì call API
+  debounceTimer = setTimeout(
+    async () => {
+      if (isInitialized.value) {
+        router.replace({
+          path: '/',
+          query: {
+            page: currentPage.value,
+            search: searchQuery.value,
+            genreId: selectedGenre.value,
+          },
+        });
+      }
+
+      const res = await bookStore.fetchBooks(
+        currentPage.value,
+        bookInPage.value,
+        searchQuery.value,
+        selectedGenre.value
+      );
+      totalPages.value = res.totalPages;
+    },
+    isInitialized.value ? 500 : 0
+  ); // Lần đầu không delay
+};
+
+watch([currentPage, searchQuery, selectedGenre], ([newPage], [oldPage]) => {
+  if (isInitialized.value) {
+    if (newPage === oldPage) currentPage.value = 1;
+    fetchData();
   }
+});
 
-  // Tìm kiếm + lọc
-  const searchQuery = ref('');
-  const selectedGenre = ref(null);
+// Hàm chuyển qua trang xem chi tiết sách
+const showBook = (bookId) => {
+  router.push(`/book/${bookId}`);
+};
 
-  // paging
-  const bookInPage = 4;
-  let currentPage = ref(1);
+// Xử lý lúc vào trang lần đầu hoặc reload trang
+onMounted(async () => {
+  // Nếu URL có query thì đồng bộ lại, không trigger watch
+  if (route.query.page) currentPage.value = parseInt(route.query.page);
+  if (route.query.search) searchQuery.value = route.query.search;
+  if (route.query.genreId) selectedGenre.value = route.query.genreId;
 
-  const filterBooks = computed(() => {
-    let books = bookStore.books;
+  // Gọi API lần đầu
+  await genreStore.fetchGenres();
+  await fetchData();
 
-    // Lọc theo thể loại
-    if (selectedGenre.value) {
-      books = books.filter(b => Array.isArray(b?.THELOAI) && b?.THELOAI.includes(selectedGenre.value));
-    }
+  // Đánh dấu khởi tạo xong
+  isInitialized.value = true;
+});
 
-    // Tìm kiếm theo tên
-    if (searchQuery.value?.trim()) {
-      const q = removeVietnameseTones(searchQuery.value.trim().toLowerCase());
-      books = books.filter(b => removeVietnameseTones(b.TENSACH.toLowerCase()).includes(q));
-    }
-
-    return books;
-  });
-
-  // Tính tổng số trang
-  const totalPage = computed(() => Math.ceil(filterBooks.value.length / bookInPage));
-
-  const showBooks = computed(() => {
-    // Đảm bảo currentPage không lớn hơn totalPage
-    if (currentPage.value > totalPage.value && totalPage.value > 0) {
-      currentPage.value = totalPage.value;
-    }
-    const start = bookInPage * (currentPage.value - 1);
-
-    return filterBooks.value.slice(start, start + bookInPage);
-  })
-
-  // Hàm chuyển qua trang xem chi tiết sách
-  const showBook = (bookId) => {
-    router.push(`/book/${bookId}`);
+onUnmounted(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
   }
+});
 </script>
 
 <template>
@@ -80,7 +108,9 @@
         <v-row class="mb-6 align-center" no-gutters>
           <v-col cols="12" md="6" class="mb-4 mb-md-0">
             <h1 class="main-title">
-              <v-icon size="40" color="primary" class="mr-3">mdi-bookshelf</v-icon>
+              <v-icon size="40" color="primary" class="mr-3"
+                >mdi-bookshelf</v-icon
+              >
               Khám Phá Sách
             </h1>
             <p class="main-subtitle text-grey mt-2">
@@ -125,19 +155,16 @@
               <v-icon size="28" class="mr-2">mdi-filter-variant</v-icon>
               Thể Loại
             </h2>
-            <v-chip-group
-              v-model="selectedGenre"
-              column
-            >
+            <v-chip-group v-model="selectedGenre" column>
               <v-chip
                 v-for="genre in genreStore.genres"
-                :key="genre.MATHELOAI"
-                :value="genre.MATHELOAI"
+                :key="genre?.MATHELOAI"
+                :value="genre?.MATHELOAI"
                 variant="outlined"
                 size="large"
                 class="elevation-0 mx-2 genre-chip"
               >
-                {{ genre.TENTHELOAI }}
+                {{ genre?.TENTHELOAI }}
               </v-chip>
             </v-chip-group>
           </v-col>
@@ -158,16 +185,8 @@
 
             <!-- Card sách -->
             <v-row>
-              <v-col
-                v-for="n in 12"
-                :key="n"
-                cols="6"
-                sm="4"
-                md="3"
-              >
-                <v-skeleton-loader
-                  type="image, article"
-                />
+              <v-col v-for="n in 12" :key="n" cols="6" sm="4" md="3">
+                <v-skeleton-loader type="image, article" />
               </v-col>
             </v-row>
           </v-col>
@@ -189,8 +208,8 @@
             <!-- Card sách -->
             <v-row>
               <v-col
-                v-for="book in showBooks"
-                :key="book.MASACH"
+                v-for="book in bookStore.books"
+                :key="book?.MASACH"
                 cols="6"
                 sm="4"
                 md="3"
@@ -198,12 +217,12 @@
                 <v-card
                   rounded="xl"
                   class="book-card d-flex flex-column justify-space-between"
-                  @click="showBook(book.MASACH)"
+                  @click="showBook(book?.MASACH)"
                 >
                   <!-- Ảnh bìa -->
                   <v-img
                     class="elevation-1 book-card-img"
-                    :src="book.ANHBIA || '/imgs/no-cover.png'"
+                    :src="book?.ANHBIA || '/imgs/no-cover.png'"
                     aspect-ratio="2/3"
                     cover
                     rounded="xl"
@@ -220,17 +239,18 @@
 
                   <!-- Phần thông tin -->
                   <v-card-text>
-                    <h3 class="book-title">{{ book.TENSACH }}</h3>
-                    <p class="book-author">{{ book.TENTACGIA }}</p>
+                    <h3 class="book-title">{{ book?.TENSACH }}</h3>
+                    <p class="book-author">{{ book?.TENTACGIA }}</p>
                     <v-chip
                       class="mt-4"
-                      :color="book.SACHCONLAI > 0 ? 'success' : 'error'"
+                      :color="book?.SACHCONLAI > 0 ? 'success' : 'error'"
                       variant="flat"
                     >
                       <span class="font-weight-bold">
-                        {{ book.SACHCONLAI > 0 
-                          ? `Còn ${book.SACHCONLAI} quyển` 
-                          : 'Hết sách' 
+                        {{
+                          book?.SACHCONLAI > 0
+                            ? `Còn ${book?.SACHCONLAI} quyển`
+                            : 'Hết sách'
                         }}
                       </span>
                     </v-chip>
@@ -245,7 +265,7 @@
                       class="show-book-btn"
                       variant="elevated"
                       color="primary"
-                      @click="showBook(book.MASACH)"
+                      @click="showBook(book?.MASACH)"
                     >
                       Xem sách
                     </v-btn>
@@ -257,7 +277,7 @@
         </v-row>
 
         <!-- Pagination -->
-        <Pagination v-model="currentPage" :length="totalPage"></Pagination>
+        <Pagination v-model="currentPage" :length="totalPages"></Pagination>
       </v-col>
     </v-row>
   </v-container>
