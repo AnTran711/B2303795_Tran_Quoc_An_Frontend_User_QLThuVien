@@ -10,8 +10,15 @@ export const useGenreStore = defineStore('genre', () => {
   // actions
 
   // Hàm lấy dữ liệu nhà xuất bản về từ backend
-  async function fetchGenres() {
-    const res = await api.get('/genres');
+  async function fetchGenres(page = 1, limit = 7, search = '', sort = true) {
+    const res = await api.get('/genres', {
+      params: {
+        page,
+        limit,
+        search,
+        sort
+      }
+    });
     genres.value = res.data.data;
     return res.data;
   }

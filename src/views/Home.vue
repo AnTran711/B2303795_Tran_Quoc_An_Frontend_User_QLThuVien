@@ -77,7 +77,7 @@ onMounted(async () => {
   if (route.query.genreId) selectedGenre.value = route.query.genreId;
 
   // Gọi API lần đầu
-  await genreStore.fetchGenres();
+  await genreStore.fetchGenres(-1);
   await fetchData();
 
   // Đánh dấu khởi tạo xong
