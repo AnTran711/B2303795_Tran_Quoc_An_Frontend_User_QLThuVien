@@ -1,28 +1,28 @@
 <script setup>
-  import { useRoute, useRouter } from 'vue-router';
-  import { useReaderStore } from '@/stores/useReaderStore.js';
+import { useRoute, useRouter } from 'vue-router';
+import { useReaderStore } from '@/stores/useReaderStore.js';
 
-  const readerStore = useReaderStore();
+const readerStore = useReaderStore();
 
-  const route = useRoute();
-  const router = useRouter();
+const route = useRoute();
+const router = useRouter();
 
-  // Kiểm tra đường dẫn hiện tại có trùng với đường dẫn không
-  const isActive = path => route.path === path;
+// Kiểm tra đường dẫn hiện tại có trùng với đường dẫn không
+const isActive = (path) => route.path === path;
 
-  // Danh sách navigator
-  const menuItems = [
-    { title: 'Trang chủ', path: '/', icon: 'mdi-home' },
-    { title: 'Lịch sử mượn sách', path: '/history', icon: 'mdi-history' }
-  ];
+// Danh sách navigator
+const menuItems = [
+  { title: 'Trang chủ', path: '/', icon: 'mdi-home' },
+  { title: 'Lịch sử mượn sách', path: '/history', icon: 'mdi-history' },
+];
 
-  // Hàm đăng xuất
-  const logout = async () => {
-    if(readerStore.reader) {
-      await readerStore.logout();
-      router.push('/');
-    }
+// Hàm đăng xuất
+const logout = async () => {
+  if (readerStore.reader) {
+    await readerStore.logout();
+    router.push('/');
   }
+};
 </script>
 
 <template>
@@ -53,7 +53,7 @@
               exact
             >
               <v-icon :icon="item.icon" size="small" class="mr-2"></v-icon>
-              {{  item.title }}
+              {{ item.title }}
             </v-btn>
           </div>
         </v-col>
@@ -87,7 +87,7 @@
           <div v-else class="d-flex align-center">
             <v-menu offset-y>
               <!-- Kích hoạt menu user -->
-              <template #activator="{ props }" >
+              <template #activator="{ props }">
                 <v-btn
                   v-bind="props"
                   variant="text"
@@ -95,7 +95,9 @@
                   class="pa-0 user-menu-btn"
                 >
                   <v-avatar size="36" color="primary" class="mr-2">
-                    <span class="text-white">{{ readerStore.getName()?.charAt(0) }}</span>
+                    <span class="text-white">{{
+                      readerStore.getName()?.charAt(0)
+                    }}</span>
                   </v-avatar>
                   <span class="mr-2">{{ readerStore.getFullName() }}</span>
                   <v-icon>mdi-chevron-down</v-icon>
@@ -104,9 +106,17 @@
 
               <!-- Danh sách chức năng -->
               <v-list>
-                <v-list-item to="/auth/change-password" prepend-icon="mdi-lock-reset" title="Đổi mật khẩu" />
+                <v-list-item
+                  to="/auth/change-password"
+                  prepend-icon="mdi-lock-reset"
+                  title="Đổi mật khẩu"
+                />
                 <v-divider></v-divider>
-                <v-list-item @click="logout" prepend-icon="mdi-logout" title="Đăng xuất" />
+                <v-list-item
+                  @click="logout"
+                  prepend-icon="mdi-logout"
+                  title="Đăng xuất"
+                />
               </v-list>
             </v-menu>
           </div>

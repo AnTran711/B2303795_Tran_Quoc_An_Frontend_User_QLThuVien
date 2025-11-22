@@ -69,6 +69,61 @@ const showBook = (bookId) => {
   router.push(`/book/${bookId}`);
 };
 
+// Xử lý tìm kiếm bằng giọng nói
+let recognition;
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  recognition = new SpeechRecognition();
+
+  recognition.lang = 'vi-VN';
+  recognition.continuous = true;
+  recognition.interimResults = false;
+}
+
+const showVoice = ref(false);
+const isListening = ref(false);
+
+// Hàm mở popup
+const openVoice = () => {
+  if (!recognition) return alert('Trình duyệt không hỗ trợ!');
+
+  showVoice.value = true;
+};
+
+// Hàm đóng popup
+const closeVoice = () => {
+  showVoice.value = false;
+};
+
+// Khi nhấn giữ
+const startVoice = () => {
+  if (isListening.value) return;
+  recognition.abort();
+  isListening.value = true;
+  setTimeout(() => recognition.start(), 150);
+};
+
+// Khi thả ra
+const stopVoice = () => {
+  isListening.value = false;
+  setTimeout(() => {
+    recognition.stop();
+  }, 1000);
+};
+
+recognition.onresult = (event) => {
+  const last = event.results.length - 1;
+  const text = event.results[last][0].transcript;
+  searchQuery.value = text;
+};
+
+recognition.onend = () => {
+  closeVoice();
+};
+
 // Xử lý lúc vào trang lần đầu hoặc reload trang
 onMounted(async () => {
   // Nếu URL có query thì đồng bộ lại, không trigger watch
@@ -117,7 +172,22 @@ onUnmounted(() => {
               Tìm kiếm và khám phá hàng ngàn cuốn sách yêu thích của bạn
             </p>
           </v-col>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="6" class="d-flex align-center justify-center">
+            <v-tooltip location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  icon
+                  v-bind="props"
+                  variant="text"
+                  color="text"
+                  class="mr-2"
+                  @click="openVoice"
+                >
+                  <v-icon size="32">mdi-microphone</v-icon>
+                </v-btn>
+              </template>
+              <span>Tìm kiếm bằng giọng nói</span>
+            </v-tooltip>
             <v-text-field
               v-model="searchQuery"
               variant="outlined"
@@ -281,6 +351,24 @@ onUnmounted(() => {
       </v-col>
     </v-row>
   </v-container>
+
+  <v-overlay v-model="showVoice" class="align-center justify-center">
+    <v-card width="300" height="300" class="d-flex flex-column pa-4">
+      <v-card-title class="text-center"> Nhấn giữ để nói </v-card-title>
+      <v-card-actions class="align-center justify-center flex-grow-1">
+        <v-btn
+          variant="text"
+          class="h-100"
+          :color="isListening ? 'primary' : 'text'"
+          @mousedown="startVoice"
+          @mouseup="stopVoice"
+          @mouseleave="stopVoice"
+        >
+          <v-icon size="200"> mdi-microphone </v-icon>
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-overlay>
 </template>
 
 <style scoped>
