@@ -338,6 +338,18 @@ onUnmounted(() => {
 
                   <v-list-item-title class="text-h6 font-weight-bold mb-2">
                     {{ record?.SACH?.TENSACH }}
+                    <v-chip
+                      v-show="
+                        record?.TRANGTHAI === 'borrowed' &&
+                        new Date().getTime() >
+                          new Date(record?.HANTRA).getTime()
+                      "
+                      class="ml-2"
+                      color="error"
+                      variant="flat"
+                    >
+                      Quá hạn
+                    </v-chip>
                   </v-list-item-title>
 
                   <v-list-item-subtitle>

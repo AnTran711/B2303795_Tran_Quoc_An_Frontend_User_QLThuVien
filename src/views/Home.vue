@@ -5,6 +5,7 @@ import { useBookStore } from '@/stores/useBookStore';
 import { useGenreStore } from '@/stores/useGenreStore';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import ChatBox from '@/components/ChatBox.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -369,6 +370,8 @@ onUnmounted(() => {
       </v-card-actions>
     </v-card>
   </v-overlay>
+
+  <ChatBox />
 </template>
 
 <style scoped>
@@ -409,6 +412,7 @@ onUnmounted(() => {
   text-transform: none;
   transition: all 0.3s ease;
   background: white;
+  color: rgb(var(--v-theme-primary));
   border: 2px solid rgb(var(--v-theme-primary));
 }
 
