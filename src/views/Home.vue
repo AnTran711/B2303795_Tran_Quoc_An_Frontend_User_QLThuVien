@@ -18,7 +18,7 @@ const searchQuery = ref('');
 const selectedGenre = ref(null);
 
 // paging
-const bookInPage = ref(4);
+const bookInPage = ref(16);
 let currentPage = ref(1);
 let totalPages = ref(1);
 
