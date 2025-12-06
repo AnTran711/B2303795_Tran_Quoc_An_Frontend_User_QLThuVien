@@ -348,7 +348,16 @@ onUnmounted(() => {
                       color="error"
                       variant="flat"
                     >
-                      Quá hạn
+                      {{
+                        (() => {
+                          const now = new Date();
+                          const due = new Date(record?.HANTRA);
+                          const days = Math.ceil(
+                            (now - due) / (1000 * 60 * 60 * 24)
+                          );
+                          return `Quá hạn ${days} ngày, phạt: ${days * 5000}đ`;
+                        })()
+                      }}
                     </v-chip>
                   </v-list-item-title>
 
